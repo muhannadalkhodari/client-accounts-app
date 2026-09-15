@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  /* لوحة الثيم الداكن "دفتر الأستاذ" - سيتم ضبطها بدقة أكبر في خطوة التصميم */
+  /* لوحة "دفتر الأستاذ" الداكنة */
   --color-ledger-bg: #0f1115;
   --color-ledger-surface: #171a21;
-  --color-ledger-border: #262b36;
+  --color-ledger-surface-raised: #1e222b;
+  --color-ledger-border: #2a2f3a;
   --color-ledger-text: #e8e6df;
   --color-ledger-muted: #8b93a1;
   --color-ledger-accent: #c9a24b;
-  --color-ledger-receipt: #3fa66a;
+  --color-ledger-accent-dim: #8a7237;
+  --color-ledger-receipt: #4caf7d;
   --color-ledger-payment: #d9584f;
 
-  --font-sans: "Tajawal", "Cairo", system-ui, sans-serif;
+  --font-sans: "Cairo", system-ui, sans-serif;
 }
 
 html, body, #root {
@@ -24,8 +26,37 @@ body {
   font-family: var(--font-sans);
 }
 
-/* أرقام إنجليزية دائماً حتى داخل نص عربي RTL */
-.ltr-numerals {
+/* أرقام إنجليزية ثابتة الاتجاه حتى داخل سياق عربي RTL، بمحاذاة متساوية للأرقام المالية */
+.numerals {
   direction: ltr;
   unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+/* نسيج ورق دفتر أستاذ خفيف جداً في الخلفية — خطوط أفقية شبه غير مرئية */
+.ledger-ruled-bg {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 35px,
+    rgba(201, 162, 75, 0.05) 35px,
+    rgba(201, 162, 75, 0.05) 36px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes shake-x {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+.shake {
+  animation: shake-x 0.5s;
 }

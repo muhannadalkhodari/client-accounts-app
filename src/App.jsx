@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import { ensureAnonymousAuth } from './services/authService.js'
+import { hasValidSession } from './utils/session.js'
+
+// يحمي أي مسار داخلي: بدون جلسة صالحة (تسجيل دخول ناجح خلال آخر أسبوع)،
+// تُعاد التوجيه فوراً إلى شاشة تسجيل الدخول.
+function RequireSession({ children }) {
+  return hasValidSession() ? children : <Navigate to="/" replace />
+}
 
 export default function App() {
   const [authReady, setAuthReady] = useState(false)
@@ -29,7 +36,14 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />
-      <Route path="/home" element={<HomePage />} />
+      <Route
+        path="/home"
+        element={
+          <RequireSession>
+            <HomePage />
+          </RequireSession>
+        }
+      />
     </Routes>
   )
 }
