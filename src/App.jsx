@@ -55,6 +55,14 @@ export default function App() {
         }
       />
       <Route
+        path="/clients/:id/edit"
+        element={
+          <RequireSession>
+            <AddEditClientPage />
+          </RequireSession>
+        }
+      />
+      <Route
         path="/clients/:id"
         element={
           <RequireSession>

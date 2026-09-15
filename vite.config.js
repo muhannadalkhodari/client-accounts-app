@@ -9,6 +9,9 @@ import { VitePWA } from 'vite-plugin-pwa'
 // إذا اخترت اسماً مختلفاً للمستودع، غيّر القيمة هنا لتطابقه بالضبط.
 export default defineConfig({
   base: '/client-accounts-app/',
+  build: {
+    outDir: 'docs',
+  },
   plugins: [
     react(),
     tailwindcss(),
