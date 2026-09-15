@@ -57,3 +57,13 @@ export function isTransactionDateValid(date, transactions = []) {
   if (min && date < min) return false
   return true
 }
+
+// مجموع أرصدة الخزينة لكل عملة عبر كل العملاء، اعتماداً على ملف الفهرس فقط
+export function computeTreasuryTotals(clientsIndexMap = {}) {
+  const totals = {}
+  for (const client of Object.values(clientsIndexMap)) {
+    if (!client) continue
+    totals[client.currency] = (totals[client.currency] ?? 0) + (client.balance ?? 0)
+  }
+  return totals
+}

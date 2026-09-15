@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage.jsx'
 import HomePage from './pages/HomePage.jsx'
+import AddEditClientPage from './pages/AddEditClientPage.jsx'
+import ClientDetailPage from './pages/ClientDetailPage.jsx'
 import { ensureAnonymousAuth } from './services/authService.js'
 import { hasValidSession } from './utils/session.js'
 
@@ -41,6 +43,22 @@ export default function App() {
         element={
           <RequireSession>
             <HomePage />
+          </RequireSession>
+        }
+      />
+      <Route
+        path="/clients/new"
+        element={
+          <RequireSession>
+            <AddEditClientPage />
+          </RequireSession>
+        }
+      />
+      <Route
+        path="/clients/:id"
+        element={
+          <RequireSession>
+            <ClientDetailPage />
           </RequireSession>
         }
       />
