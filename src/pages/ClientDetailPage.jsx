@@ -146,7 +146,7 @@ export default function ClientDetailPage() {
       <div className="mb-5 flex items-center gap-3">
         <button type="button" onClick={() => navigate('/home')} aria-label="رجوع" className="text-ledger-muted">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M14 6l-6 6 6 6" />
+            <path d="M10 6l6 6-6 6" />
           </svg>
         </button>
         <h1 className="flex-1 truncate text-lg font-semibold text-ledger-text">{client.name}</h1>
@@ -186,6 +186,13 @@ export default function ClientDetailPage() {
           {formatCurrency(officeProfit, client.currency)}
         </p>
       </div>
+
+      {client.notes && (
+        <div className="mt-3 rounded-2xl border border-ledger-border bg-ledger-surface px-5 py-3">
+          <p className="text-xs text-ledger-muted">ملاحظات</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-ledger-text">{client.notes}</p>
+        </div>
+      )}
 
       <div className="mt-4 flex gap-2">
         <button

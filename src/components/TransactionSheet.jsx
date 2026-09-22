@@ -86,6 +86,7 @@ export default function TransactionSheet({
             <label className="mb-1.5 block text-sm text-ledger-muted">التاريخ</label>
             <input
               type="date"
+              dir="ltr"
               value={date}
               min={minDate || undefined}
               max={maxDate}

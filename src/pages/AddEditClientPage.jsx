@@ -91,7 +91,7 @@ export default function AddEditClientPage() {
           className="text-ledger-muted"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M14 6l-6 6 6 6" />
+            <path d="M10 6l6 6-6 6" />
           </svg>
         </button>
         <h1 className="text-lg font-semibold text-ledger-text">
