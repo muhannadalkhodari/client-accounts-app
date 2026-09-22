@@ -1,5 +1,4 @@
 import { formatAmount } from './format.js'
-import { toVisualArabic } from './arabicText.js'
 
 const FONT_URL = `${import.meta.env.BASE_URL}fonts/Amiri-Regular.ttf`
 let cachedFontBase64 = null
@@ -45,11 +44,26 @@ function columnBounds() {
   })
 }
 
+let shaperInstalled = false
+
 // يُنشئ PDF يحوي فقط جدول المعاملات + إجمالي القبض وإجمالي الدفع،
 // بدون أي رصيد صافٍ أو ربح مكتب، حسب المواصفات المتفق عليها.
 // نص عربي حقيقي قابل للتحديد والبحث (وليس صورة)، بحجم ملف أصغر بكثير.
+//
+// معالجة العربية (تشكيل الحروف + ترتيبها البصري الصحيح) تتم عبر مكتبة
+// "bidi-shaper" المخصصة لهذا الغرض بالضبط مع jsPDF، بدل تنفيذ ذلك يدوياً،
+// لتقليل احتمال الأخطاء الدقيقة في هذا الجزء الحسّاس.
 export async function generateClientPdf(transactions) {
-  const [{ default: jsPDF }, fontBase64] = await Promise.all([import('jspdf'), loadFontBase64()])
+  const [{ default: jsPDF }, { installJsPdfShaper }, fontBase64] = await Promise.all([
+    import('jspdf'),
+    import('bidi-shaper/jspdf'),
+    loadFontBase64(),
+  ])
+
+  if (!shaperInstalled) {
+    installJsPdfShaper(jsPDF.API)
+    shaperInstalled = true
+  }
 
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   doc.addFileToVFS('Amiri-Regular.ttf', fontBase64)
@@ -67,8 +81,9 @@ export async function generateClientPdf(transactions) {
     doc.setFillColor(242, 242, 242)
     doc.rect(PAGE.margin, y, PAGE.width - 2 * PAGE.margin, HEADER_HEIGHT, 'F')
     doc.setFontSize(11)
+    doc.setTextColor(30, 30, 30)
     cols.forEach((col) => {
-      doc.text(toVisualArabic(col.label), col.xRight - 6, y + HEADER_HEIGHT / 2 + 4, { align: 'right' })
+      doc.text(col.label, col.xRight - 6, y + HEADER_HEIGHT / 2 + 4, { align: 'right' })
     })
     y += HEADER_HEIGHT
     doc.setDrawColor(180, 180, 180)
@@ -96,8 +111,7 @@ export async function generateClientPdf(transactions) {
 
     if (t.description) {
       const descCol = cols.find((c) => c.key === 'description')
-      const visual = toVisualArabic(t.description)
-      const truncated = doc.splitTextToSize(visual, descCol.width - 12)[0]
+      const truncated = doc.splitTextToSize(t.description, descCol.width - 12)[0]
       doc.text(truncated, descCol.xRight - 6, rowY, { align: 'right' })
     }
 
@@ -126,7 +140,7 @@ export async function generateClientPdf(transactions) {
   doc.setFontSize(11)
   const descCol = cols.find((c) => c.key === 'description')
   doc.setTextColor(30, 30, 30)
-  doc.text(toVisualArabic('الإجمالي'), descCol.xRight - 6, y - ROW_HEIGHT / 2 + 4, { align: 'right' })
+  doc.text('الإجمالي', descCol.xRight - 6, y - ROW_HEIGHT / 2 + 4, { align: 'right' })
 
   const receiptCol = cols.find((c) => c.key === 'receipt')
   doc.setTextColor(26, 122, 76)
