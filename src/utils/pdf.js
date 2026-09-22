@@ -1,93 +1,140 @@
 import { formatAmount } from './format.js'
+import { toVisualArabic } from './arabicText.js'
+
+const FONT_URL = `${import.meta.env.BASE_URL}fonts/Amiri-Regular.ttf`
+let cachedFontBase64 = null
+
+function arrayBufferToBase64(buffer) {
+  let binary = ''
+  const bytes = new Uint8Array(buffer)
+  const chunkSize = 0x8000
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+  }
+  return btoa(binary)
+}
+
+async function loadFontBase64() {
+  if (cachedFontBase64) return cachedFontBase64
+  const res = await fetch(FONT_URL)
+  if (!res.ok) throw new Error('تعذّر تحميل خط PDF')
+  const buffer = await res.arrayBuffer()
+  cachedFontBase64 = arrayBufferToBase64(buffer)
+  return cachedFontBase64
+}
+
+const PAGE = { width: 595.28, height: 841.89, margin: 40 }
+const ROW_HEIGHT = 24
+const HEADER_HEIGHT = 26
+
+// أعمدة الجدول من اليمين إلى اليسار (كما تُقرأ الوثيقة عربياً)
+const COLUMNS = [
+  { key: 'date', label: 'التاريخ', width: 90 },
+  { key: 'description', label: 'البيان', width: 225 },
+  { key: 'receipt', label: 'قبض', width: 100 },
+  { key: 'payment', label: 'دفع', width: 100 },
+]
+
+function columnBounds() {
+  let xRight = PAGE.width - PAGE.margin
+  return COLUMNS.map((col) => {
+    const xLeft = xRight - col.width
+    const bounds = { ...col, xLeft, xRight }
+    xRight = xLeft
+    return bounds
+  })
+}
 
 // يُنشئ PDF يحوي فقط جدول المعاملات + إجمالي القبض وإجمالي الدفع،
 // بدون أي رصيد صافٍ أو ربح مكتب، حسب المواصفات المتفق عليها.
+// نص عربي حقيقي قابل للتحديد والبحث (وليس صورة)، بحجم ملف أصغر بكثير.
 export async function generateClientPdf(transactions) {
-  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-    import('jspdf'),
-    import('html2canvas'),
-  ])
-  const totalReceipts = transactions
-    .filter((t) => t.type === 'receipt')
-    .reduce((sum, t) => sum + t.amount, 0)
-  const totalPayments = transactions
-    .filter((t) => t.type === 'payment')
-    .reduce((sum, t) => sum + t.amount, 0)
+  const [{ default: jsPDF }, fontBase64] = await Promise.all([import('jspdf'), loadFontBase64()])
 
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  doc.addFileToVFS('Amiri-Regular.ttf', fontBase64)
+  doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal')
+  doc.setFont('Amiri', 'normal')
+
+  const cols = columnBounds()
+  const totalReceipts = transactions.filter((t) => t.type === 'receipt').reduce((s, t) => s + t.amount, 0)
+  const totalPayments = transactions.filter((t) => t.type === 'payment').reduce((s, t) => s + t.amount, 0)
   const sorted = [...transactions].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
 
-  const rows = sorted
-    .map(
-      (t) => `
-      <tr>
-        <td style="padding:8px;border-bottom:1px solid #ddd;">${t.date}</td>
-        <td style="padding:8px;border-bottom:1px solid #ddd;">${t.description || ''}</td>
-        <td style="padding:8px;border-bottom:1px solid #ddd;color:#1a7a4c;">${
-          t.type === 'receipt' ? formatAmount(t.amount) : ''
-        }</td>
-        <td style="padding:8px;border-bottom:1px solid #ddd;color:#b3352f;">${
-          t.type === 'payment' ? formatAmount(t.amount) : ''
-        }</td>
-      </tr>`,
-    )
-    .join('')
+  let y = PAGE.margin
 
-  const container = document.createElement('div')
-  container.dir = 'rtl'
-  container.style.position = 'fixed'
-  container.style.top = '-10000px'
-  container.style.left = '-10000px'
-  container.style.width = '700px'
-  container.style.background = '#ffffff'
-  container.style.color = '#111111'
-  container.style.fontFamily = 'Cairo, sans-serif'
-  container.style.padding = '24px'
-  container.innerHTML = `
-    <table style="width:100%;border-collapse:collapse;font-size:14px;">
-      <thead>
-        <tr style="background:#f2f2f2;">
-          <th style="padding:8px;text-align:right;">التاريخ</th>
-          <th style="padding:8px;text-align:right;">البيان</th>
-          <th style="padding:8px;text-align:right;">قبض</th>
-          <th style="padding:8px;text-align:right;">دفع</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-      <tfoot>
-        <tr style="font-weight:bold;">
-          <td style="padding:8px;border-top:2px solid #333;"></td>
-          <td style="padding:8px;border-top:2px solid #333;">الإجمالي</td>
-          <td style="padding:8px;border-top:2px solid #333;color:#1a7a4c;">${formatAmount(totalReceipts)}</td>
-          <td style="padding:8px;border-top:2px solid #333;color:#b3352f;">${formatAmount(totalPayments)}</td>
-        </tr>
-      </tfoot>
-    </table>
-  `
-  document.body.appendChild(container)
+  function drawHeaderRow() {
+    doc.setFillColor(242, 242, 242)
+    doc.rect(PAGE.margin, y, PAGE.width - 2 * PAGE.margin, HEADER_HEIGHT, 'F')
+    doc.setFontSize(11)
+    cols.forEach((col) => {
+      doc.text(toVisualArabic(col.label), col.xRight - 6, y + HEADER_HEIGHT / 2 + 4, { align: 'right' })
+    })
+    y += HEADER_HEIGHT
+    doc.setDrawColor(180, 180, 180)
+    doc.line(PAGE.margin, y, PAGE.width - PAGE.margin, y)
+  }
 
-  try {
-    const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff' })
-    const pdf = new jsPDF({ unit: 'pt', format: 'a4' })
-    const pageWidth = pdf.internal.pageSize.getWidth()
-    const pageHeight = pdf.internal.pageSize.getHeight()
-    const imgWidth = pageWidth
-    const imgHeight = (canvas.height * imgWidth) / canvas.width
-    const imgData = canvas.toDataURL('image/png')
+  function ensureSpace(needed) {
+    if (y + needed > PAGE.height - PAGE.margin) {
+      doc.addPage()
+      y = PAGE.margin
+      drawHeaderRow()
+    }
+  }
 
-    let heightLeft = imgHeight
-    let position = 0
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-    heightLeft -= pageHeight
+  drawHeaderRow()
+  doc.setFontSize(10)
 
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight
-      pdf.addPage()
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
+  for (const t of sorted) {
+    ensureSpace(ROW_HEIGHT)
+    const rowY = y + ROW_HEIGHT / 2 + 3
+
+    const dateCol = cols.find((c) => c.key === 'date')
+    doc.setTextColor(30, 30, 30)
+    doc.text(t.date, dateCol.xRight - 6, rowY, { align: 'right' })
+
+    if (t.description) {
+      const descCol = cols.find((c) => c.key === 'description')
+      const visual = toVisualArabic(t.description)
+      const truncated = doc.splitTextToSize(visual, descCol.width - 12)[0]
+      doc.text(truncated, descCol.xRight - 6, rowY, { align: 'right' })
     }
 
-    return pdf.output('blob')
-  } finally {
-    document.body.removeChild(container)
+    if (t.type === 'receipt') {
+      const col = cols.find((c) => c.key === 'receipt')
+      doc.setTextColor(26, 122, 76)
+      doc.text(formatAmount(t.amount), col.xRight - 6, rowY, { align: 'right' })
+    } else {
+      const col = cols.find((c) => c.key === 'payment')
+      doc.setTextColor(179, 53, 47)
+      doc.text(formatAmount(t.amount), col.xRight - 6, rowY, { align: 'right' })
+    }
+
+    y += ROW_HEIGHT
+    doc.setDrawColor(225, 225, 225)
+    doc.line(PAGE.margin, y, PAGE.width - PAGE.margin, y)
   }
+
+  ensureSpace(ROW_HEIGHT + 6)
+  doc.setDrawColor(60, 60, 60)
+  doc.setLineWidth(1.2)
+  doc.line(PAGE.margin, y, PAGE.width - PAGE.margin, y)
+  doc.setLineWidth(0.5)
+  y += ROW_HEIGHT
+
+  doc.setFontSize(11)
+  const descCol = cols.find((c) => c.key === 'description')
+  doc.setTextColor(30, 30, 30)
+  doc.text(toVisualArabic('الإجمالي'), descCol.xRight - 6, y - ROW_HEIGHT / 2 + 4, { align: 'right' })
+
+  const receiptCol = cols.find((c) => c.key === 'receipt')
+  doc.setTextColor(26, 122, 76)
+  doc.text(formatAmount(totalReceipts), receiptCol.xRight - 6, y - ROW_HEIGHT / 2 + 4, { align: 'right' })
+
+  const paymentCol = cols.find((c) => c.key === 'payment')
+  doc.setTextColor(179, 53, 47)
+  doc.text(formatAmount(totalPayments), paymentCol.xRight - 6, y - ROW_HEIGHT / 2 + 4, { align: 'right' })
+
+  return doc.output('blob')
 }
