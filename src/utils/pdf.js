@@ -69,7 +69,7 @@ export async function generateClientPdf(transactions) {
 
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
-  const font = await pdfDoc.embedFont(fontBytes, { subset: true })
+  const font = await pdfDoc.embedFont(fontBytes, { subset: false })
 
   const cols = columnBounds()
   const totalReceipts = transactions.filter((t) => t.type === 'receipt').reduce((s, t) => s + t.amount, 0)
