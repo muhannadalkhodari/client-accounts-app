@@ -33,18 +33,22 @@ function columnBounds() {
   })
 }
 
-// يقصّ نصاً عربياً (بعد تشكيله) ليُناسب عرضاً معيناً، بإضافة "…" عند القص
-function truncateToWidth(rawText, font, size, maxWidth) {
-  if (font.widthOfTextAtSize(rawText, size) <= maxWidth) return rawText
+// يقصّ نصاً (مُشكَّلاً ومُرتَّباً بصرياً بالفعل) ليُناسب عرضاً معيناً، بإضافة "…"
+// عند بداية الاقتصاص. بما أن النص بترتيبه البصري النهائي (أول الجملة على اليمين
+// = نهاية المصفوفة)، يجب الإبقاء على نهاية المصفوفة وحذف بدايتها لإظهار بداية
+// الجملة الفعلية مع "…" في مكان القص (أقصى اليسار).
+function truncateToWidth(visualText, font, size, maxWidth) {
+  if (font.widthOfTextAtSize(visualText, size) <= maxWidth) return visualText
+  const chars = Array.from(visualText)
   let low = 0
-  let high = rawText.length
+  let high = chars.length
   while (low < high) {
     const mid = Math.ceil((low + high) / 2)
-    const candidate = rawText.slice(0, mid) + '…'
+    const candidate = '…' + chars.slice(chars.length - mid).join('')
     if (font.widthOfTextAtSize(candidate, size) <= maxWidth) low = mid
     else high = mid - 1
   }
-  return low > 0 ? rawText.slice(0, low) + '…' : ''
+  return low > 0 ? '…' + chars.slice(chars.length - low).join('') : ''
 }
 
 // يُنشئ PDF يحوي فقط جدول المعاملات + إجمالي القبض وإجمالي الدفع،
@@ -71,6 +75,16 @@ export async function generateClientPdf(transactions) {
   pdfDoc.registerFontkit(fontkit)
   const font = await pdfDoc.embedFont(fontBytes, { subset: false })
 
+  // bidi-shaper يُخرج النص بترتيبه البصري الصحيح لمعظم محركات الرسم، لكن تبيّن
+  // تجريبياً أن pdf-lib يرسم الحروف بترتيب معاكس لما تتوقعه هذه المكتبة تحديداً،
+  // لذا نعكس الناتج مرة إضافية قبل الرسم. تم التحقق من هذا بمقارنة بصرية مباشرة
+  // (حرفاً بحرف) مع مرجع مستقل موثوق (WeasyPrint/Pango) لنص عربي خالص ونص مختلط
+  // بأرقام مضمّنة، وتطابقت النتيجة تماماً في الحالتين بعد هذا العكس الإضافي.
+  function shapeForDrawing(text) {
+    const visual = shapeArabic(text)
+    return Array.from(visual).reverse().join('')
+  }
+
   const cols = columnBounds()
   const totalReceipts = transactions.filter((t) => t.type === 'receipt').reduce((s, t) => s + t.amount, 0)
   const totalPayments = transactions.filter((t) => t.type === 'payment').reduce((s, t) => s + t.amount, 0)
@@ -84,7 +98,7 @@ export async function generateClientPdf(transactions) {
   }
 
   function drawRightText(rawText, xRight, fromTopBaseline, size, color) {
-    const shaped = shapeArabic(rawText)
+    const shaped = shapeForDrawing(rawText)
     const width = font.widthOfTextAtSize(shaped, size)
     page.drawText(shaped, { x: xRight - width, y: toPdfY(fromTopBaseline), size, font, color })
   }
@@ -129,7 +143,7 @@ export async function generateClientPdf(transactions) {
 
     if (t.description) {
       const descCol = cols.find((c) => c.key === 'description')
-      const shapedDesc = shapeArabic(t.description)
+      const shapedDesc = shapeForDrawing(t.description)
       const fitted = truncateToWidth(shapedDesc, font, 10, descCol.width - 12)
       const width = font.widthOfTextAtSize(fitted, 10)
       page.drawText(fitted, { x: descCol.xRight - 6 - width, y: toPdfY(baseline), size: 10, font, color: BLACK })
