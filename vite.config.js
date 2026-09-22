@@ -17,7 +17,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-512-maskable.png'],
+      includeAssets: ['favicon.ico', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-512-maskable.png', "fonts/Amiri-Regular.ttf"],
       manifest: {
         name: 'حسابات العملاء',
         short_name: 'حسابات العملاء',
@@ -35,7 +35,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,ttf}'],
       },
     }),
   ],
