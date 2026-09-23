@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import AddEditClientPage from './pages/AddEditClientPage.jsx'
 import ClientDetailPage from './pages/ClientDetailPage.jsx'
+import UpdateToast from './components/UpdateToast.jsx'
 import { ensureAnonymousAuth } from './services/authService.js'
 import { hasValidSession } from './utils/session.js'
 
@@ -36,40 +37,43 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<LoginPage />} />
-      <Route
-        path="/home"
-        element={
-          <RequireSession>
-            <HomePage />
-          </RequireSession>
-        }
-      />
-      <Route
-        path="/clients/new"
-        element={
-          <RequireSession>
-            <AddEditClientPage />
-          </RequireSession>
-        }
-      />
-      <Route
-        path="/clients/:id/edit"
-        element={
-          <RequireSession>
-            <AddEditClientPage />
-          </RequireSession>
-        }
-      />
-      <Route
-        path="/clients/:id"
-        element={
-          <RequireSession>
-            <ClientDetailPage />
-          </RequireSession>
-        }
-      />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route
+          path="/home"
+          element={
+            <RequireSession>
+              <HomePage />
+            </RequireSession>
+          }
+        />
+        <Route
+          path="/clients/new"
+          element={
+            <RequireSession>
+              <AddEditClientPage />
+            </RequireSession>
+          }
+        />
+        <Route
+          path="/clients/:id/edit"
+          element={
+            <RequireSession>
+              <AddEditClientPage />
+            </RequireSession>
+          }
+        />
+        <Route
+          path="/clients/:id"
+          element={
+            <RequireSession>
+              <ClientDetailPage />
+            </RequireSession>
+          }
+        />
+      </Routes>
+      <UpdateToast /> 
+    </>
   )
 }
