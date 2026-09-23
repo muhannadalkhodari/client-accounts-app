@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import TreasurySummary from '../components/TreasurySummary.jsx'
 import SegmentedTabs from '../components/SegmentedTabs.jsx'
 import ClientListItem from '../components/ClientListItem.jsx'
+import ThemeToggle from '../components/ThemeToggle.jsx'
 import { getClientsIndex } from '../services/clientService.js'
 import { computeTreasuryTotals } from '../utils/calculations.js'
 
@@ -17,7 +18,7 @@ export default function HomePage() {
   const [clientsMap, setClientsMap] = useState(null)
   const [tab, setTab] = useState('current')
   const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState('lastUpdate') // 'lastUpdate' | 'name'
+  const [sortBy, setSortBy] = useState('lastUpdate')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -38,20 +39,17 @@ export default function HomePage() {
     if (tab !== 'all') list = list.filter((c) => c.status === tab)
     const q = search.trim()
     if (q) list = list.filter((c) => c.name.includes(q) || (c.phone ?? '').includes(q))
-
     const sorted = [...list]
-    if (sortBy === 'name') {
-      sorted.sort((a, b) => a.name.localeCompare(b.name, 'ar'))
-    } else {
-      sorted.sort((a, b) => (b.lastUpdate ?? 0) - (a.lastUpdate ?? 0))
-    }
+    if (sortBy === 'name') sorted.sort((a, b) => a.name.localeCompare(b.name, 'ar'))
+    else sorted.sort((a, b) => (b.lastUpdate ?? 0) - (a.lastUpdate ?? 0))
     return sorted
   }, [clients, tab, search, sortBy])
 
   return (
     <div className="min-h-screen bg-ledger-bg pb-24">
-      <header className="px-4 pt-8 pb-4">
+      <header className="flex items-center justify-between px-4 pt-8 pb-4">
         <h1 className="text-lg font-semibold text-ledger-text">حسابات العملاء</h1>
+        <ThemeToggle />
       </header>
 
       <div className="px-4">
@@ -95,11 +93,7 @@ export default function HomePage() {
             </p>
           )}
           {visibleClients.map((client) => (
-            <ClientListItem
-              key={client.id}
-              client={client}
-              onClick={() => navigate(`/clients/${client.id}`)}
-            />
+            <ClientListItem key={client.id} client={client} onClick={() => navigate(`/clients/${client.id}`)} />
           ))}
         </div>
       </div>
