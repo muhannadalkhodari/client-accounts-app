@@ -4,6 +4,7 @@ import TreasurySummary from '../components/TreasurySummary.jsx'
 import SegmentedTabs from '../components/SegmentedTabs.jsx'
 import ClientListItem from '../components/ClientListItem.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
+import InstallPrompt from '../components/InstallPrompt.jsx'
 import { getClientsIndex } from '../services/clientService.js'
 import { computeTreasuryTotals } from '../utils/calculations.js'
 
@@ -53,6 +54,8 @@ export default function HomePage() {
       </header>
 
       <div className="px-4">
+        <InstallPrompt />
+
         {error && (
           <p className="mb-4 rounded-xl border border-ledger-payment/40 bg-ledger-payment/10 px-4 py-3 text-sm text-ledger-payment">
             تعذّر تحميل البيانات: {error}

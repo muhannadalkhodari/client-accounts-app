@@ -3,27 +3,28 @@ import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// ملاحظة: base يجب أن يطابق اسم مستودع GitHub الذي سيتم النشر عليه.
-// مثال: إذا كان رابط المستودع github.com/username/client-accounts-app
-// فيجب أن يبقى base كما هو أدناه "/client-accounts-app/".
-// إذا اخترت اسماً مختلفاً للمستودع، غيّر القيمة هنا لتطابقه بالضبط.
 export default defineConfig({
   base: '/client-accounts-app/',
-  build: {
-    outDir: 'docs',
-  },
+  build: { outDir: 'docs' },
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-512-maskable.png', "fonts/Amiri-Regular.ttf"],
+      registerType: 'prompt',
+      includeAssets: [
+        'favicon.ico',
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+        'icons/icon-512-maskable.png',
+        'icons/apple-touch-icon.png',
+        'fonts/Amiri-Regular.ttf',
+      ],
       manifest: {
         name: 'حسابات العملاء',
         short_name: 'حسابات العملاء',
         description: 'إدارة حسابات العملاء المالية (قبض ودفع)',
-        theme_color: '#0f1115',
-        background_color: '#0f1115',
+        theme_color: '#faf9f6',
+        background_color: '#faf9f6',
         display: 'standalone',
         orientation: 'portrait',
         dir: 'rtl',
@@ -32,6 +33,14 @@ export default defineConfig({
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+        shortcuts: [
+          {
+            name: 'إضافة عميل جديد',
+            short_name: 'عميل جديد',
+            url: '/client-accounts-app/clients/new',
+            icons: [{ src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
         ],
       },
       workbox: {

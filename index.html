@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#faf9f6" />
+
+    <!-- دعم تثبيت التطبيق على iOS (سفاري لا يقرأ ملف manifest.json بنفس طريقة أندرويد) -->
+    <link rel="apple-touch-icon" href="/client-accounts-app/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="حسابات العملاء" />
+
     <link rel="icon" href="/client-accounts-app/favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,8 +20,6 @@
     />
     <title>حسابات العملاء</title>
     <script>
-      // يُطبَّق فوراً قبل رسم الصفحة لتفادي "وميض" الثيم الخاطئ عند التحميل.
-      // المضيء افتراضي دائماً؛ الداكن يُفعَّل فقط إذا اختاره المستخدم سابقاً.
       try {
         if (localStorage.getItem('theme') === 'dark') {
           document.documentElement.setAttribute('data-theme', 'dark')

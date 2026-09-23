@@ -35,6 +35,13 @@ html, body, #root {
   height: 100%;
 }
 
+/* هوامش أمان للأجهزة ذات الحواف المنحنية/الشق العلوي (iPhone وغيرها)، حتى
+   لا يختفي المحتوى تحت شريط الحالة أو مؤشر الشاشة السفلي عند تثبيت التطبيق. */
+:root {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 body {
   background-color: var(--color-ledger-bg);
   color: var(--color-ledger-text);
